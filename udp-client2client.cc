@@ -57,7 +57,6 @@ main (int argc, char *argv[]){
     // --- APLICACOES --- //
     // Coloca um ping e um sink em cada cliente
     NS_LOG_INFO ("Create applications on node 0.");
-    uint16_t sinkPort = 50000;
 
     //Ping
     V4PingHelper ping (interface.GetAddress(1)); //destino do ping
@@ -65,19 +64,11 @@ main (int argc, char *argv[]){
     ping.SetAttribute ("Interval", TimeValue (Seconds(1.0)));
     ping.SetAttribute ("Size", UintegerValue (16));
 
-    //Sink
-    Address sinkLocalAddress(InetSocketAddress(interface.GetAddress(0), sinkPort)); //endereco do sink
-    PacketSinkHelper sink("ns3::UdpSocketFactory", sinkLocalAddress);
-
     //Instala e starta
     ApplicationContainer pingApp, sinkApp;
     pingApp = ping.Install(nodes.Get(0));
     pingApp.Start(Seconds(1.0));
     pingApp.Stop(Seconds(1.9));
-
-    sinkApp = sink.Install(nodes.Get(0));
-    sinkApp.Start(Seconds(1.0));
-    sinkApp.Stop(Seconds(1.9));
 
     NS_LOG_INFO ("Create applications on node 1.");
 
@@ -87,19 +78,11 @@ main (int argc, char *argv[]){
     ping1.SetAttribute ("Interval", TimeValue (Seconds(1.0)));
     ping1.SetAttribute ("Size", UintegerValue (16));
 
-    //Sink
-    Address sink1LocalAddress(InetSocketAddress(interface.GetAddress(1), sinkPort)); //endereco do sink
-    PacketSinkHelper sink1("ns3::UdpSocketFactory", sink1LocalAddress);
-
     //Instala e starta
     ApplicationContainer ping1App, sink1App;
     ping1App = ping1.Install(nodes.Get(1));
     ping1App.Start(Seconds(1.0));
     ping1App.Stop(Seconds(1.9));
-
-    sink1App = sink1.Install(nodes.Get(1));
-    sink1App.Start(Seconds(1.0));
-    sink1App.Stop(Seconds(1.9));
 
     // TRACING
     AsciiTraceHelper ascii;
