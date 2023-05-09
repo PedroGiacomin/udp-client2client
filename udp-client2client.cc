@@ -22,7 +22,7 @@ NS_LOG_COMPONENT_DEFINE ("UdpClient2Client");
 
 int 
 main (int argc, char *argv[]){
-    uint16_t numNodes = 4;
+    uint16_t numNodes = 3;
     Address serverAddress;
 
     // --- LOGGING --- //
@@ -56,31 +56,35 @@ main (int argc, char *argv[]){
 
     // --- APLICACOES --- //
     // Cada client tem numNodes-1 aplicacoes ping, cada uma com um endereco de destino (so nao tem a do proprio endereco)
-    ApplicationContainer pingApp;
+    // Cada aplicacao eh uma posicao do vetor pingApps
+    std::vector<ApplicationContainer> pingApps(numNodes);
     for(uint16_t i = 0; i < numNodes; ++i){
         for(uint16_t j = 0; j < numNodes; ++j){
             if(j != i){
                 V4PingHelper pingHelperAux(interface.GetAddress(j));
                 pingHelperAux.SetAttribute ("Verbose", BooleanValue (false));
-                pingHelperAux.SetAttribute ("Interval", TimeValue (Seconds(1.0)));
+                pingHelperAux.SetAttribute ("Interval", TimeValue (Seconds(numNodes)));
                 pingHelperAux.SetAttribute ("Size", UintegerValue (16));
-                pingApp.Add(pingHelperAux.Install(nodes.Get(i))); // Instala ping(dest: j) no node i
+                pingApps[i].Add(pingHelperAux.Install(nodes.Get(i))); // Instala ping(dest: j) no node i
             }
         }
     }
 
-    // // Todas as aplicacoes iniciam no mesmo instante
-    pingApp.Start(Seconds(1.0));
-    pingApp.Stop(Seconds(1.9));
+    // Os nodes comecam a pingar com 1 segundo de diferenca
+    for(uint16_t i = 0; i < numNodes; ++i){
+        uint16_t appStart = 1.0 + 1.0*i;
+        pingApps[i].Start(Seconds(appStart));
+        pingApps[i].Stop(Seconds(appStart + numNodes * 3 + 1.0)); //Termina apos enviar 3 pacotes
+    }
     
     // TRACING
     AsciiTraceHelper ascii;
-    csma.EnableAsciiAll (ascii.CreateFileStream ("udp-client2client.tr"));
-    csma.EnablePcapAll ("udp-client2client.tr", false);
+    csma.EnableAsciiAll (ascii.CreateFileStream ("tracing/udp-client2client/udp-client2client.tr"));
+    csma.EnablePcapAll ("tracing/udp-client2client/udp-client2client.tr", false);
 
     // --- NETANIM --- //
     NS_LOG_INFO("Set animation.");
-    AnimationInterface anim ("udp-client2client-anim.xml");
+    AnimationInterface anim ("anim/udp-client2client-anim.xml");
 
     MobilityHelper mobility;
     mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
