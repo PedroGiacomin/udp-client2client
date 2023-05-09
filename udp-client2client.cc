@@ -22,7 +22,7 @@ NS_LOG_COMPONENT_DEFINE ("UdpClient2Client");
 
 int 
 main (int argc, char *argv[]){
-    uint16_t numNodes = 2;
+    uint16_t numNodes = 4;
     Address serverAddress;
 
     // --- LOGGING --- //
@@ -55,35 +55,24 @@ main (int argc, char *argv[]){
     Ipv4InterfaceContainer interface = address.Assign (csmaDevices);
 
     // --- APLICACOES --- //
-    // Coloca um ping e um sink em cada cliente
-    NS_LOG_INFO ("Create applications on node 0.");
+    // Cada client tem numNodes-1 aplicacoes ping, cada uma com um endereco de destino (so nao tem a do proprio endereco)
+    ApplicationContainer pingApp;
+    for(uint16_t i = 0; i < numNodes; ++i){
+        for(uint16_t j = 0; j < numNodes; ++j){
+            if(j != i){
+                V4PingHelper pingHelperAux(interface.GetAddress(j));
+                pingHelperAux.SetAttribute ("Verbose", BooleanValue (false));
+                pingHelperAux.SetAttribute ("Interval", TimeValue (Seconds(1.0)));
+                pingHelperAux.SetAttribute ("Size", UintegerValue (16));
+                pingApp.Add(pingHelperAux.Install(nodes.Get(i))); // Instala ping(dest: j) no node i
+            }
+        }
+    }
 
-    //Ping
-    V4PingHelper ping (interface.GetAddress(1)); //destino do ping
-    ping.SetAttribute ("Verbose", BooleanValue (false));
-    ping.SetAttribute ("Interval", TimeValue (Seconds(1.0)));
-    ping.SetAttribute ("Size", UintegerValue (16));
-
-    //Instala e starta
-    ApplicationContainer pingApp, sinkApp;
-    pingApp = ping.Install(nodes.Get(0));
+    // // Todas as aplicacoes iniciam no mesmo instante
     pingApp.Start(Seconds(1.0));
     pingApp.Stop(Seconds(1.9));
-
-    NS_LOG_INFO ("Create applications on node 1.");
-
-    //Ping
-    V4PingHelper ping1 (interface.GetAddress(0)); //destino do ping1
-    ping1.SetAttribute ("Verbose", BooleanValue (false));
-    ping1.SetAttribute ("Interval", TimeValue (Seconds(1.0)));
-    ping1.SetAttribute ("Size", UintegerValue (16));
-
-    //Instala e starta
-    ApplicationContainer ping1App, sink1App;
-    ping1App = ping1.Install(nodes.Get(1));
-    ping1App.Start(Seconds(1.0));
-    ping1App.Stop(Seconds(1.9));
-
+    
     // TRACING
     AsciiTraceHelper ascii;
     csma.EnableAsciiAll (ascii.CreateFileStream ("udp-client2client.tr"));
